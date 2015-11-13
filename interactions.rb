@@ -57,27 +57,26 @@ def get_options
 			options[:verbose] = v
 		end
 		# Specifies the databse file
-		opts.on("-db", String, "Use a database file other than 'database.db'") do |db|
+		opts.on("-db", "--db=DB", "Use a database file other than 'database.db'") do |db|
 			options[:db] = db
+		end
+		# Handles the assigned CSV
+		opts.on("-d", "--[no] data", "Takes assigned class CSV and loads it into the db") do |csv|
+			options[:csv] = csv
 		end
 		# Handles help
 		opts.on("-h", "--help", "Prints this help screen") do
 			puts opts
 		end
-		# Handles the assigned CSV
-		opts.on("-data", "--data", "Takes assigned class CSV and loads it into the db") do
-			options[:csv] = true
-		end
 	end.parse!
 	return options
 end
 
+# Script starts here
 options = get_options()
+db = options[:db] || 'database.db'
 
-
-`sqlite3 database.db < schema.sql`
-
-db = DatabaseInteractor.new "database.db"
+interactor = DatabaseInteractor.new db
 
 
 
