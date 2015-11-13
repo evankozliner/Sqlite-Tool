@@ -1,13 +1,18 @@
 require 'sqlite3'
 require 'optparse'
+require 'csv'
 
 class DatabaseInteractor
+	# Generic constructor, creates a database connection on initialization.
+	# Input:
+	# 	file: The file to open a database connection to. Non-existing files are
+	# 	created automatically.
 	def initialize file
 		@db_file = file
 		@db = intialize()
 	end
 	
-	# Inserts a row into the database
+	# Inserts a row into the database.
 	# Input: 
 	# 	table: A string fort the table to insert into (must already exist)
 	#		value_map: A hash with keys as column rows and values as values to insert
@@ -31,7 +36,7 @@ class DatabaseInteractor
 		end
 	end
 	
-	# Establishes a database connection
+	# Establishes a database connection.
 	def intialize
 		begin
 			return SQLite3::Database.open @db_file
@@ -42,11 +47,43 @@ class DatabaseInteractor
 end
 
 def get_options
-	return 0
+	options = {}
+	options[:schema] = false
+
+	OptionParser.new do |opts|
+		opts.banner = "Usage: ruby interactions.rb [options]"
+		# Handles verbose mode
+		opts.on("-v", "--[no] verbose", "Run verbosely") do |v|
+			options[:verbose] = v
+		end
+		# Specifies the databse file
+		opts.on("-db", String, "Use a database file other than 'database.db'") do |db|
+			options[:db] = db
+		end
+		# Handles help
+		opts.on("-h", "--help", "Prints this help screen") do
+			puts opts
+		end
+		# Handles the assigned CSV
+		opts.on("-data", "--data", "Takes assigned class CSV and loads it into the db") do
+			options[:csv] = true
+		end
+	end.parse!
+	return options
 end
+
+options = get_options()
+
 
 `sqlite3 database.db < schema.sql`
 
-tests = {"one" => "Kozliner", "two" => 5}
 db = DatabaseInteractor.new "database.db"
-db.insert("test", tests)
+
+
+
+
+
+
+
+
+
