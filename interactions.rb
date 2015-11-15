@@ -12,6 +12,19 @@ class DatabaseInteractor
 		@db_file = file
 		@db = intialize()
 	end
+
+	def get_first_name full_name
+		return full_name.split(" ")[0]
+	end
+
+	def get_last_name full_name
+		words = full_name.split(" ")
+		if words[2].nil?
+			return words[1] # There are always at least 2 words in row 2
+		else
+			return words[2] # Ignore middle names
+		end
+	end
 	
 	# Inserts an entry into the authors and books tables from the project data
 	def insert_person name, person_id
@@ -29,31 +42,41 @@ class DatabaseInteractor
 	# If we hit an author and that author already exists we only add to the 
 	# written by table
 	def try_author_insertion row, existing_authors
+		person_id = nil
 		if existing_authors.values.include? row[2]
 			person_id = existing_authors[row[2]]
-			insert("written_by", {
-				:person_id 	=> person_id
-				:book_id		=> row[0]
-			})
 		else
+			puts existing_authors.to_s
 			# New id is always one higher than the last entered id
-			new_person_id = existing_authors.values.max + 1
-			existing_authors[row[2]] = new_person_id
-			insert_person(row[2], new_person_id)
+			if existing_authors.count > 0 # Handle first entry
+				person_id = existing_authors.values.max + 1
+			else
+				person_id = 0
+			end
+			existing_authors[row[2]] = person_id
+			insert_person(row[2], person_id)
 		end
+		insert("written_by", {
+			:person_id 	=> person_id,
+			:book_id		=> row[0]
+		})
 		return existing_authors
 	end
 
 	# Parses the entries file into a database containing authors and publishers
 	def parse_class_file
+		puts "Parsing class file..."
 		book = Spreadsheet.open("proj_data_xls.xls")
 		sheet = book.worksheet(0)
 		item_id = 0 # Probably a bad idea to rely on order in insertions (temporary)
 		existing_authors = {} # author name => person id mapping
-		sheet.each do |row|
-			if row[0].blank? # If the first row is null we have additional authors
+		sheet.each_with_index do |row, index|
+			if index == 0 or index == 1
+				next
+			end
+			if row[0].nil? # If the first row is null we have additional authors
 				existing_authors = try_author_insertion(row, existing_authors)
-			else
+			else # Otherwise we're entering a new book
 				insert("item", {
 					:price 	=> row[5].to_s,
 					:name 	=> row[1].to_s, 
@@ -63,6 +86,7 @@ class DatabaseInteractor
 					:isbn 	=> row[0].to_s,
 					:item_id	=> item_id.to_s
 				})
+				existing_authors = try_author_insertion row, existing_authors
 				item_id += 1
 			end
 		end
@@ -128,6 +152,10 @@ end
 
 # Script starts here
 options = get_options()
+# Some stuff here for faster testing
+`rm database.db`
+`touch database.db`
+`sqlite3 database.db < schema.sql`
 db = options[:db] || 'database.db'
 puts "Options:"
 p options
