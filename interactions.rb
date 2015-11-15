@@ -43,21 +43,21 @@ class DatabaseInteractor
 	# written by table
 	def try_author_insertion row, existing_authors
 		person_id = nil
-		if existing_authors.values.include? row[2]
+		if existing_authors.keys.include? row[2].strip
+			puts row[2]
 			person_id = existing_authors[row[2]]
 		else
-			puts existing_authors.to_s
 			# New id is always one higher than the last entered id
 			if existing_authors.count > 0 # Handle first entry
 				person_id = existing_authors.values.max + 1
 			else
 				person_id = 0
 			end
-			existing_authors[row[2]] = person_id
-			insert_person(row[2], person_id)
+			existing_authors[row[2].strip] = person_id
+			insert_person(row[2].strip, person_id)
 		end
 		insert("written_by", {
-			:person_id 	=> person_id,
+			:author_id 	=> person_id,
 			:book_id		=> row[0]
 		})
 		return existing_authors
@@ -65,13 +65,12 @@ class DatabaseInteractor
 
 	# Parses the entries file into a database containing authors and publishers
 	def parse_class_file
-		puts "Parsing class file..."
 		book = Spreadsheet.open("proj_data_xls.xls")
 		sheet = book.worksheet(0)
 		item_id = 0 # Probably a bad idea to rely on order in insertions (temporary)
 		existing_authors = {} # author name => person id mapping
 		sheet.each_with_index do |row, index|
-			if index == 0 or index == 1
+			if index == 0 or index == 1 # Handle headers
 				next
 			end
 			if row[0].nil? # If the first row is null we have additional authors
@@ -86,10 +85,11 @@ class DatabaseInteractor
 					:isbn 	=> row[0].to_s,
 					:item_id	=> item_id.to_s
 				})
-				existing_authors = try_author_insertion row, existing_authors
+				existing_authors = try_author_insertion(row, existing_authors)
 				item_id += 1
 			end
 		end
+		puts existing_authors.to_s
 	end
 	# Inserts a row into the database.
 	# Input: 
@@ -99,18 +99,18 @@ class DatabaseInteractor
 		column_string, value_string = "", ""
 		value_map.each do |key, value|
 			column_string += key.to_s + ", "
-			value_string += "'" +  value.to_s + "', "
+			value_string += '"' +  value.to_s + '", '
 		end
 		column_string = column_string[0..(column_string.length - 3)] # Lose trailing ','
 		value_string = value_string[0..(value_string.length - 3)] 
 		
-		statement = "INSERT INTO " + table
-		statement += " (" + column_string.to_s + ")"
-		statement += " VALUES (" + value_string.to_s + ")"
-		puts "Executing SQLite3 statement: " + statement
+		statement = "INSERT INTO " + table.strip
+		statement += " (" + column_string.to_s.strip + ")"
+		statement += " VALUES (" + value_string.to_s.strip + ")"
 		begin 
 			@db.execute statement
 		rescue => e # Eat exception so later queries are executed
+			puts "Failing SQL Statement: " + statement
 			puts e
 		end
 	end
@@ -153,8 +153,11 @@ end
 # Script starts here
 options = get_options()
 # Some stuff here for faster testing
+puts "Removing old database file..."
 `rm database.db`
+puts "Making new database file..."
 `touch database.db`
+puts "Loading in schema..."
 `sqlite3 database.db < schema.sql`
 db = options[:db] || 'database.db'
 puts "Options:"
@@ -163,6 +166,7 @@ p options
 interactor = DatabaseInteractor.new db
 
 if options[:csv] 
+	puts "Parsing excel doc..."
 	interactor.parse_class_file()
 end
 
