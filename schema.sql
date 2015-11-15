@@ -1,4 +1,4 @@
-create table if not exists item(item_id integer primary key not null, price integer, name text, year integer, inventory boolean);
+create table if not exists item(item_id integer primary key not null, price integer, name text, year integer, inventory boolean, publisher_id integer, foreign key(publisher_id) references publisher(pub_id));
 
 create table if not exists book(isbn primary key not null, item_id integer not null, foreign key(item_id) references item(item_id));
 
@@ -25,8 +25,6 @@ create table if not exists written_by(author_id integer, book_id integer, primar
 create table if not exists magazine(issn integer, pub_date date, item_id integer, primary key(issn,pub_date), foreign key(item_id) references item(item_id));
 
 create table if not exists contains(order_id integer, item_id integer, primary key(order_id,item_id), foreign key(order_id) references c_order(order_number), foreign key(item_id) references item(item_id));
-
-create table if not exists published_by(publisher_id integer, item_id integer, primary key(publisher_id, item_id), foreign key(publisher_id) references publisher(pub_id), foreign key(item_id) references item(item_id));
 
 create table if not exists review(review_id integer primary key autoincrement not null, rating integer, body text, item_id integer, reviewer_id integer, foreign key(item_id) references item(item_id), foreign key(reviewer_id) references customer(person_id));
 
