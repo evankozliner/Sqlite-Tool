@@ -12,15 +12,36 @@ class DatabaseInteractor
 		@db_file = file
 		@db = intialize()
 	end
-
-	def insert_person row
+	
+	# Inserts an entry into the authors and books tables from the project data
+	def insert_person name, person_id
 		insert("person", {
-			:first_name => get_first_name(row[2]),
-			:last_name => get_last_name(row[2])
+			:person_id 	=> person_id,
+			:first_name => get_first_name(name),
+			:last_name 	=> get_last_name(name)
 		})
 		insert("author", {
-					
+			:person_id => person_id
 		})
+	end
+	
+	# Sees if the author has already been inserted in this script and 
+	# If we hit an author and that author already exists we only add to the 
+	# written by table
+	def try_author_insertion row, existing_authors
+		if existing_authors.values.include? row[2]
+			person_id = existing_authors[row[2]]
+			insert("written_by", {
+				:person_id 	=> person_id
+				:book_id		=> row[0]
+			})
+		else
+			# New id is always one higher than the last entered id
+			new_person_id = existing_authors.values.max + 1
+			existing_authors[row[2]] = new_person_id
+			insert_person(row[2], new_person_id)
+		end
+		return existing_authors
 	end
 
 	# Parses the entries file into a database containing authors and publishers
@@ -28,12 +49,10 @@ class DatabaseInteractor
 		book = Spreadsheet.open("proj_data_xls.xls")
 		sheet = book.worksheet(0)
 		item_id = 0 # Probably a bad idea to rely on order in insertions (temporary)
-		existing_authors = []
-
+		existing_authors = {} # author name => person id mapping
 		sheet.each do |row|
 			if row[0].blank? # If the first row is null we have additional authors
-				
-				insert_person(row)
+				existing_authors = try_author_insertion(row, existing_authors)
 			else
 				insert("item", {
 					:price 	=> row[5].to_s,
