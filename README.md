@@ -7,3 +7,5 @@
 	    -d, --dataata                    Takes assigned class CSV and loads it into the db
 
 Eileen killed the radio star
+Katie killed the video star
+Now there's no one left
