@@ -16,10 +16,19 @@ class DatabaseInteractor
 	# Parses the entries file into a database containing authors and publishers
 	def parse_class_file
 		book = Spreadsheet.open("proj_data_xls.xls")
-		sheet = book.worksheet 0 
+		sheet = book.worksheet(0)
 
 		sheet.each do |row|
-			puts row.to_s
+			if row[0].blank? # If the first row is null we have additional authors
+				insert("author", {
+				})
+			else
+				insert("item", {
+					:item_id => row[0]
+				})
+				insert("book", {
+				})
+			end
 		end
 	end
 	# Inserts a row into the database.
