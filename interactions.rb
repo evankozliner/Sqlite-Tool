@@ -13,21 +13,38 @@ class DatabaseInteractor
 		@db = intialize()
 	end
 
+	def insert_person row
+		insert("person", {
+			:first_name => get_first_name(row[2]),
+			:last_name => get_last_name(row[2])
+		})
+		insert("author", {
+					
+		})
+	end
+
 	# Parses the entries file into a database containing authors and publishers
 	def parse_class_file
 		book = Spreadsheet.open("proj_data_xls.xls")
 		sheet = book.worksheet(0)
+		item_id = 0 # Probably a bad idea to rely on order in insertions (temporary)
+		existing_authors = []
 
 		sheet.each do |row|
 			if row[0].blank? # If the first row is null we have additional authors
-				insert("author", {
-				})
+				
+				insert_person(row)
 			else
 				insert("item", {
-					:item_id => row[0]
+					:price 	=> row[5].to_s,
+					:name 	=> row[1].to_s, 
+					:year 	=> row[4].to_s
 				})
 				insert("book", {
+					:isbn 	=> row[0].to_s,
+					:item_id	=> item_id.to_s
 				})
+				item_id += 1
 			end
 		end
 	end
