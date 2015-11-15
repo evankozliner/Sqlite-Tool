@@ -63,12 +63,19 @@ class DatabaseInteractor
 		return existing_authors
 	end
 
+	# Creates a publisher if one does not already exist and adds that publisher
+	# to the list of existing publishers. Also returns a publisher id regardless
+	# of whether or not the publisher already existed
+	def try_publisher_insertion(row, existing_publishers)
+	end
+
 	# Parses the entries file into a database containing authors and publishers
 	def parse_class_file
 		book = Spreadsheet.open("proj_data_xls.xls")
 		sheet = book.worksheet(0)
-		item_id = 0 # Probably a bad idea to rely on order in insertions (temporary)
+		pub_id, item_id = 0, 0 # Probably a bad idea to rely on order in insertions
 		existing_authors = {} # author name => person id mapping
+		existing_publishers = {} # publisher name => pub id mapping
 		sheet.each_with_index do |row, index|
 			if index == 0 or index == 1 # Handle headers
 				next
@@ -76,10 +83,12 @@ class DatabaseInteractor
 			if row[0].nil? # If the first row is null we have additional authors
 				existing_authors = try_author_insertion(row, existing_authors)
 			else # Otherwise we're entering a new book
+				pub_id, existing_publishers = try_publisher_insertion(row, existing_publishers)
 				insert("item", {
 					:price 	=> row[5].to_s,
 					:name 	=> row[1].to_s, 
-					:year 	=> row[4].to_s
+					:year 	=> row[4].to_s,
+					:publisher_id => pub_id
 				})
 				insert("book", {
 					:isbn 	=> row[0].to_s,
