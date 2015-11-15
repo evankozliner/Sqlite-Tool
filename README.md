@@ -1,3 +1,6 @@
+###Note:
+* Uses project_data_xls.xls for database creation
+	
 	Usage: ruby interactions.rb [options]
 	    -v, --[no] verbose               Run verbosely
 	    -h, --help                       Prints this help screen

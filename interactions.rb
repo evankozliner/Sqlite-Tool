@@ -1,6 +1,7 @@
 require 'sqlite3'
 require 'optparse'
 require 'csv'
+require 'spreadsheet'
 
 class DatabaseInteractor
 	# Generic constructor, creates a database connection on initialization.
@@ -11,7 +12,16 @@ class DatabaseInteractor
 		@db_file = file
 		@db = intialize()
 	end
-	
+
+	# Parses the entries file into a database containing authors and publishers
+	def parse_class_file
+		book = Spreadsheet.open("proj_data_xls.xls")
+		sheet = book.worksheet 0 
+
+		sheet.each do |row|
+			puts row.to_s
+		end
+	end
 	# Inserts a row into the database.
 	# Input: 
 	# 	table: A string fort the table to insert into (must already exist)
@@ -48,7 +58,6 @@ end
 
 def get_options
 	options = {}
-	options[:schema] = false
 
 	OptionParser.new do |opts|
 		opts.banner = "Usage: ruby interactions.rb [options]"
@@ -61,8 +70,8 @@ def get_options
 			options[:db] = db
 		end
 		# Handles the assigned CSV
-		opts.on("-d", "--[no] data", "Takes assigned class CSV and loads it into the db") do |csv|
-			options[:csv] = csv
+		opts.on("-d", "--[no] data", "Takes assigned class CSV and loads it into the db") do
+			options[:csv] = true
 		end
 		# Handles help
 		opts.on("-h", "--help", "Prints this help screen") do
@@ -75,14 +84,13 @@ end
 # Script starts here
 options = get_options()
 db = options[:db] || 'database.db'
+puts "Options:"
+p options
 
 interactor = DatabaseInteractor.new db
 
-
-
-
-
-
-
+if options[:csv] 
+	interactor.parse_class_file()
+end
 
 
