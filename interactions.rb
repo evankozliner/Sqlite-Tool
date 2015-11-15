@@ -67,6 +67,23 @@ class DatabaseInteractor
 	# to the list of existing publishers. Also returns a publisher id regardless
 	# of whether or not the publisher already existed
 	def try_publisher_insertion(row, existing_publishers)
+		pub_name = row[3].strip
+		pub_id = nil
+		if existing_publishers.keys.include? pub_name
+			pub_id = existing_publishers[pub_name]
+		else
+			if existing_publishers.count > 0 # Handle first entry
+				pub_id = existing_publishers.values.max + 1
+			else
+				pub_id = 0
+			end
+			insert("publisher", {
+				:pub_id => pub_id,
+				:name 	=> pub_name
+			})
+			existing_publishers[pub_name] = pub_id
+		end
+		return pub_id, existing_publishers
 	end
 
 	# Parses the entries file into a database containing authors and publishers
